@@ -1,1 +1,55 @@
-1
+prod_env = false
+
+
+proxy_path = "../secrets/proxies.txt"
+
+
+
+web_host = "http://127.0.0.1:8888"
+
+# for private endpoints
+private_key = "3af0ebad-840b-4ab0-a40b-ebce913c029e"
+
+
+[rack_web] # api/
+ipv4 = "0.0.0.0:8888"
+proto = "http"
+
+
+[rack_currency] # blockchain/
+global_testnet = true 
+coinmarket_api = "" # coinmarketcap api key
+
+
+[rack_currency.ton]
+testnet = false
+
+[rack_currency.eth]
+testnet = false
+api_key = "" # infura api key
+
+[rack_currency.sol]
+testnet = false
+
+[postgres]
+host = "127.0.0.1"
+user = "postgres"
+password = "lol"
+db_name = "postgres"
+port = 5432
+ssl_mode = "disable" # enable/disable
+
+[nats]
+servers = [
+    "127.0.0.1:4222",
+    # "127.0.0.1:4222",
+    # "127.0.0.1:4224"
+]
+
+
+
+[testing]
+enabled = false # if true then transactions are accepted. If prod_env = true and enabled = true, panic occurs.
+tx_confirm_delay = 1 # in seconds. confirms the transaction
+tx_fin_processing_delay = 1 # in seconds. completes transaction processing 
+tx_fin_delay = 1 #  in seconds. the delay after the transaction is processed before the webhook is sent
