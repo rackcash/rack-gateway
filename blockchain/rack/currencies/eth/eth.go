@@ -22,7 +22,6 @@ func Init(config *config.Config, currencies *atomic.Int32) *ethclient.Client {
 	fmt.Printf("[%d] ETH connected: %s\n", currencies.Load(), url)
 
 	client := Connect(url + config.RackCurrency.Eth.ApiKey)
-	// client := Connect(url)
 
 	currencies.Add(1)
 

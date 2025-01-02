@@ -12,6 +12,7 @@ tests/
 .env
 .todo
 c2.toml
+config.toml
 scripts/
 ns-restart.sh
 start_dev.sh
