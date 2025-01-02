@@ -1,0 +1,27 @@
+syntax="proto3";
+ 
+package proto;
+
+option go_package = "log.grpc";
+
+enum Logstream {
+   INVOICES  = 0;
+   FATAL = 1;
+   NATS = 2;
+   WEBHOOKS = 3;
+} 
+
+message LogRequest {
+   Logstream logstream = 1;
+   bytes payload = 2;
+}
+ 
+message LogResponse {
+   string msg = 1;
+   bool is_error = 2;
+}
+
+ 
+service Log{
+   rpc SendLog(LogRequest) returns (LogResponse);
+}

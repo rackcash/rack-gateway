@@ -1,0 +1,18 @@
+# rackBot/
+# pkg/
+# rackBot/
+# blockchain/
+# api/
+tmp/
+temp/
+secrets/
+node_modules/
+logs/
+tests/
+.env
+.todo
+c2.toml
+scripts/
+ns-restart.sh
+start_dev.sh
+infra/
