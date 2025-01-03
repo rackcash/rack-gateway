@@ -4,7 +4,6 @@ package v1
 
 import (
 	"context"
-	"encoding/base64"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -125,6 +124,7 @@ func (h *Handler) invoiceCreate(c *gin.Context) {
 func (h *Handler) info(c *gin.Context) {
 	var data struct {
 		InvoiceId string `json:"invoice_id"`
+		ApiKey    string `json:"api_key"`
 	}
 
 	var errid = logger.GenErrorId()
@@ -143,10 +143,32 @@ func (h *Handler) info(c *gin.Context) {
 		return
 	}
 
+	if data.ApiKey == "" {
+		responseErr(c, http.StatusBadRequest, domain.ErrMsgApiKeyInvalid, "")
+		return
+	}
+
 	invoice, err := h.services.Invoices.FindGlobal(h.db, data.InvoiceId)
 	if err != nil {
 		// responses.ErrWithMsg(c, responses.ErrMsgInternalServerError, http.StatusInternalServerError)
 		responseErr(c, domain.GetStatusByErr(err), err.Error(), errid)
+		return
+	}
+
+	merchant, err := h.services.Merchants.FindByApiKey(h.db, data.ApiKey)
+	if err != nil {
+		if postgres.IsNotFound(err) {
+			responseErr(c, http.StatusBadRequest, domain.ErrMsgApiKeyNotFound, "")
+			return
+		}
+
+		responseErr(c, http.StatusInternalServerError, domain.ErrMsgInternalServerError, errid)
+		h.log.TemplInvoiceErr("find by api key error: "+err.Error(), errid, data.InvoiceId, decimal.Zero, logger.NA, c.Request.RequestURI, invoice.MerchantID, c.ClientIP())
+		return
+	}
+
+	if merchant.MerchantID != invoice.MerchantID {
+		responseErr(c, http.StatusBadRequest, domain.ErrMsgApiKeyInvalid, "")
 		return
 	}
 
@@ -196,21 +218,24 @@ func (h *Handler) qrCode(c *gin.Context) {
 		return
 	}
 
-	qrCode, err := h.services.QrCodes.FindOrNew(wallet.InvoiceID)
+	qrCode, err := h.services.QrCodes.FindOrNew(wallet.Address)
 	if err != nil {
 		responseErr(c, http.StatusInternalServerError, domain.ErrMsgInternalServerError, errid)
 		h.log.TemplInvoiceErr("qr code find or new error: "+err.Error(), errid, invoiceId, decimal.Zero, wallet.Crypto, c.Request.RequestURI, wallet.MerchantID, c.ClientIP())
 		return
 	}
 
-	imageData, err := base64.StdEncoding.DecodeString(qrCode)
-	if err != nil {
-		responseErr(c, http.StatusInternalServerError, domain.ErrMsgInternalServerError, errid)
-		h.log.TemplInvoiceErr("qr code decode error: "+err.Error(), errid, invoiceId, decimal.Zero, wallet.Crypto, c.Request.RequestURI, wallet.MerchantID, c.ClientIP())
-		return
-	}
+	fmt.Println(wallet.Address)
+	// fmt.Println(qrCode)
 
-	c.Data(http.StatusOK, "image/png", imageData)
+	// imageData, err := base64.StdEncoding.DecodeString(qrCode)
+	// if err != nil {
+	// 	responseErr(c, http.StatusInternalServerError, domain.ErrMsgInternalServerError, errid)
+	// 	h.log.TemplInvoiceErr("qr code decode error: "+err.Error(), errid, invoiceId, decimal.Zero, wallet.Crypto, c.Request.RequestURI, wallet.MerchantID, c.ClientIP())
+	// 	return
+	// }
+
+	c.Data(http.StatusOK, "image/png", []byte(qrCode))
 }
 
 func (h *Handler) initPubInvoiceRoutes(g *gin.RouterGroup) {
