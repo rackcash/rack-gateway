@@ -21,6 +21,7 @@ type Invoices interface {
 
 type Wallets interface {
 	FindByInvoiceID(tx *gorm.DB, invoiceID string) (*domain.Wallets, error)
+	FindByMerchantID(tx *gorm.DB, merchantID string, crypto string) (*domain.Wallets, error)
 	Create(tx *gorm.DB, wallet *domain.Wallets) error
 }
 
@@ -36,20 +37,28 @@ type Events interface {
 	Find(tx *gorm.DB, eventRelationID uint, eventType string) (*domain.Events, error)
 }
 
+type Withdrawals interface {
+	Create(tx *gorm.DB, withdrawal *domain.Withdrawals) error
+	Find(tx *gorm.DB, withdrawalId string) (*domain.Withdrawals, error)
+	UpdateStatus(tx *gorm.DB, withdrawalId string, status domain.WithdrawalStatus) error
+}
+
 type Repositories struct {
-	Merchants Merchants
-	Invoices  Invoices
-	Wallets   Wallets
-	Balances  Balances
-	Events    Events
+	Merchants   Merchants
+	Invoices    Invoices
+	Wallets     Wallets
+	Balances    Balances
+	Events      Events
+	Withdrawals Withdrawals
 }
 
 func New() *Repositories {
 	return &Repositories{
-		Events:    InitEventsRepo(),
-		Merchants: InitMerchantsRepo(),
-		Invoices:  InitInvoicesRepo(),
-		Wallets:   InitWalletsRepo(),
-		Balances:  InitBalancesRepo(),
+		Events:      InitEventsRepo(),
+		Merchants:   InitMerchantsRepo(),
+		Invoices:    InitInvoicesRepo(),
+		Wallets:     InitWalletsRepo(),
+		Balances:    InitBalancesRepo(),
+		Withdrawals: InitWithdrawalsRepo(),
 	}
 }

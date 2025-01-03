@@ -56,7 +56,6 @@ func (ns *Ns) ReqAndRecv(subject SubjType, jsonMsg []byte) ([]byte, error) {
 	if response != nil {
 		return response.Data, nil
 	}
-	//  TODO: сделать проверку через n.HelpersIsError
 
 	return []byte{0}, fmt.Errorf("unknown error: data == nil && err == nil")
 }

@@ -21,3 +21,8 @@ func (r *WalletsRepo) FindByInvoiceID(tx *gorm.DB, invoiceID string) (*domain.Wa
 func (r *WalletsRepo) Create(tx *gorm.DB, wallet *domain.Wallets) error {
 	return tx.Create(wallet).Error
 }
+
+func (r *WalletsRepo) FindByMerchantID(tx *gorm.DB, merchantID string, crypto string) (*domain.Wallets, error) {
+	var wallet domain.Wallets
+	return &wallet, tx.Where(&domain.Wallets{MerchantID: merchantID, Crypto: crypto}).First(&wallet).Error
+}

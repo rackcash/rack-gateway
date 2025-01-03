@@ -26,6 +26,7 @@ func (h *Handler) InitRoutes(g *gin.RouterGroup) {
 		h.initPrivInvoiceRoutes(g)
 
 		h.initMerchantRoutes(g)
+		h.initFinancesRoutes(g)
 	}
 }
 

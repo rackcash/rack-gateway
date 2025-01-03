@@ -75,8 +75,8 @@ type Withdrawal struct {
 
 type ReqMerchantWithdrawal struct {
 	Withdrawal
-	UserId              string
 	WithdrawalTimestamp string
+	WithdrawalID        string
 	// Comission float64 // in % (1.5)
 }
 

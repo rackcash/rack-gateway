@@ -20,12 +20,12 @@ func Init(config *config.Config) *gorm.DB {
 		panic("Gorm error: " + err.Error())
 	}
 
-	err = db.AutoMigrate(&domain.Wallets{}, &domain.Merchants{}, &domain.Invoices{}, &domain.Balances{})
+	err = db.AutoMigrate(&domain.Wallets{}, &domain.Merchants{}, &domain.Invoices{}, &domain.Balances{}, &domain.Withdrawals{})
 	if err != nil {
 		panic("Auto migrate error: " + err.Error())
 	}
 
-	if err := db.AutoMigrate(&domain.Wallets{}, &domain.Merchants{}, &domain.Invoices{}, &domain.Balances{}, &domain.Events{}); err != nil {
+	if err := db.AutoMigrate(&domain.Wallets{}, &domain.Merchants{}, &domain.Invoices{}, &domain.Balances{}, &domain.Events{}, &domain.Withdrawals{}); err != nil {
 		panic("Auto migrate error: " + err.Error())
 	}
 

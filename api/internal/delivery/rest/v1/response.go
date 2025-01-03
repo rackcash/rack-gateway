@@ -18,6 +18,22 @@ type responseInvoiceCreatedWallet struct {
 	Cryptocurrency string          `json:"cryptocurrency"`
 }
 
+type responseWithdrawalStarted struct {
+	Error        bool   `json:"error"`
+	WithdrawalID string `json:"withdrawal_id"`
+	ToAddress    string `json:"to_address"`
+	Amount       string `json:"amount"`
+	Status       string `json:"info"`
+}
+
+type responseWithdrawalInfo struct {
+	Error     bool   `json:"error"`
+	ToAddress string `json:"to_address"`
+	Amount    string `json:"amount"`
+	Status    string `json:"status"`
+	CreatedAt string `json:"created_at"`
+}
+
 // /invoice/create
 type responseInvoiceCreatedInfo struct {
 	Id string `json:"id"`

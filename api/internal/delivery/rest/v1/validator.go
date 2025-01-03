@@ -27,9 +27,9 @@ type limit struct {
 
 // TODO: change
 var amountLimits = map[string]limit{
-	"ETH": {Min: decimal.NewFromFloat(0), Max: decimal.NewFromInt(100000000)},
-	"TON": {Min: decimal.NewFromFloat(0), Max: decimal.NewFromInt(100000000)},
-	"SOL": {Min: decimal.NewFromFloat(0), Max: decimal.NewFromInt(100000000)},
+	"eth": {Min: decimal.NewFromFloat(0), Max: decimal.NewFromInt(100000000)},
+	"ton": {Min: decimal.NewFromFloat(0), Max: decimal.NewFromInt(100000000)},
+	"sol": {Min: decimal.NewFromFloat(0), Max: decimal.NewFromInt(100000000)},
 }
 
 type NewInvoiceData struct {
@@ -76,7 +76,7 @@ func filterQuery(c *gin.Context) (*NewInvoiceData, bool) {
 	}
 
 	validationErr := validationErrs[0]
-	responseErr(c, http.StatusBadRequest, formatValidationErr(data, validationErr), "")
+	responseErr(c, http.StatusBadRequest, formatValidationErr(data, data.Cryptocurrency, validationErr), "")
 
 	return nil, false
 
@@ -87,6 +87,7 @@ func validateAmount(fl validator.FieldLevel) bool {
 	obj := fl.Parent()
 	amount := fl.Field().Float()
 
+	// TODO: fix
 	amountCurrency := obj.FieldByName("cryptocurrency")
 	if !amountCurrency.IsValid() {
 		fmt.Println("Invalid field by name: cryptocurrency")
@@ -127,14 +128,14 @@ func validateWebhook(fl validator.FieldLevel) bool {
 	return err == nil
 }
 
-func formatValidationErr(data NewInvoiceData, err validator.FieldError) string {
+func formatValidationErr(data any, cryptocurrency string, err validator.FieldError) string {
 	jsonTag := getJSONTag(data, err.Field())
 
 	switch err.Tag() {
 	case "required":
 		return fmt.Sprintf("field '%s' is required", jsonTag)
 	case "oneof":
-		return fmt.Sprintf("field '%s' must be one of %s", jsonTag, err.Param())
+		return fmt.Sprintf("field '%s' must be one of '%s'", jsonTag, err.Param())
 	case "min":
 		return fmt.Sprintf("field '%s' must be at least %s characters long", jsonTag, err.Param())
 	case "max":
@@ -147,13 +148,13 @@ func formatValidationErr(data NewInvoiceData, err validator.FieldError) string {
 	case "webhook":
 		return fmt.Sprintf("field '%s' must be a valid HTTPS url", jsonTag)
 	case "amount":
-		limit, ok := amountLimits[data.Cryptocurrency]
+		limit, ok := amountLimits[cryptocurrency]
 		if !ok {
 			var currencyList string
 			for k := range amountLimits {
 				currencyList += k + " "
 			}
-			return fmt.Sprintf("field cryptocurrency must be one of %s", currencyList)
+			return fmt.Sprintf("field cryptocurrency must be one of '%s'", currencyList)
 		}
 		return fmt.Sprintf("field '%s' must be greater than %s and less than %s", jsonTag, limit.Min, limit.Max)
 

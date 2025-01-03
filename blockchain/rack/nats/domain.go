@@ -58,7 +58,7 @@ type App struct {
 // 	TargetAmount   decimal.Decimal // final amount
 // }
 
-type Withdraw struct {
+type Withdrawal struct {
 	MerchantId string
 	Address    string
 	Private    string          // from (private key)
@@ -69,7 +69,7 @@ type Withdraw struct {
 }
 
 type ReqMerchantWithdrawal struct {
-	Withdraw
+	Withdrawal
 	UserId string
 	// Comission float64 // in % (1.5)
 }

@@ -1,18 +1,17 @@
 package service
 
 import (
-	"bytes"
 	"context"
 	"encoding/json"
 	"errors"
 	"fmt"
 	"infra/api/internal/config"
+	"infra/api/internal/domain"
 	"infra/api/internal/infra/nats"
 	"infra/api/internal/logger"
 	"infra/api/internal/repository"
 	"infra/pkg/nats/natsdomain"
 	"infra/pkg/utils"
-	"net/http"
 	"time"
 
 	"github.com/nats-io/nats.go/jetstream"
@@ -24,7 +23,8 @@ type GetMerchantWithdrawalService struct {
 	// repo repository
 	// invoicesService  Invoices
 	// merchantsService Merchants
-	balances repository.Balances
+	balances    repository.Balances
+	withdrawals repository.Withdrawals
 	// wallets          repository.Wallets
 	// webhook          WebhookSender
 	// events           repository.Events
@@ -36,7 +36,7 @@ type GetMerchantWithdrawalService struct {
 	natsinfra *nats.NatsInfra
 }
 
-func NewGetMerchantWithdrawalService(db *gorm.DB, natsinfra *nats.NatsInfra, l logger.Logger, balances repository.Balances, config *config.Config) *GetMerchantWithdrawalService {
+func NewGetMerchantWithdrawalService(db *gorm.DB, natsinfra *nats.NatsInfra, l logger.Logger, balances repository.Balances, withdrawals repository.Withdrawals, config *config.Config) *GetMerchantWithdrawalService {
 	stream, err := nats.InitResponsesStream(context.Background(), natsinfra.Js)
 	if err != nil {
 		panic(err)
@@ -51,7 +51,7 @@ func NewGetMerchantWithdrawalService(db *gorm.DB, natsinfra *nats.NatsInfra, l l
 		panic("CreateOrUpdateConsumer error" + err.Error())
 	}
 
-	return &GetMerchantWithdrawalService{db: db, natsinfra: natsinfra, c: c, balances: balances, l: l, config: config}
+	return &GetMerchantWithdrawalService{db: db, natsinfra: natsinfra, c: c, balances: balances, l: l, config: config, withdrawals: withdrawals}
 }
 
 func (s *GetMerchantWithdrawalService) StartWaitStatus() {
@@ -61,7 +61,7 @@ func (s *GetMerchantWithdrawalService) StartWaitStatus() {
 	_, err := s.c.Consume(func(msg jetstream.Msg) {
 		err := s.consumer(msg)
 		if err != nil {
-			s.l.Debug("Consume error", "error", err.Error())
+			s.l.Debug("Consume error", "error", err.Error(), "msg", string(msg.Data()))
 			msg.NakWithDelay(delay)
 			return
 		}
@@ -108,6 +108,7 @@ func (s *GetMerchantWithdrawalService) consumer(msg jetstream.Msg) error {
 	case natsdomain.MerchantWithdrawalStatusSent:
 		return s.handleSent(jsonRes)
 	case natsdomain.MerchantWithdrawalStatusError:
+		fmt.Println("error")
 		return s.handleError(jsonRes)
 	default:
 		s.l.Debug("Invalid status", "status", jsonRes.Status)
@@ -118,10 +119,11 @@ func (s *GetMerchantWithdrawalService) consumer(msg jetstream.Msg) error {
 }
 
 func (s *GetMerchantWithdrawalService) handleError(jsonRes *natsdomain.ResMerchantWithdrawal) error {
+	var errid = logger.GenErrorId()
 
 	data, err := json.Marshal(natsdomain.ReqMerchantWithdrawal{
-		UserId:              jsonRes.UserId,
 		WithdrawalTimestamp: jsonRes.WithdrawalTimestamp,
+		WithdrawalID:        jsonRes.WithdrawalID,
 		Withdrawal: natsdomain.Withdrawal{
 			FromAddress: jsonRes.FromAddress,
 			MerchantId:  jsonRes.MerchantId,
@@ -135,10 +137,17 @@ func (s *GetMerchantWithdrawalService) handleError(jsonRes *natsdomain.ResMercha
 		return err
 	}
 
-	return s.natsinfra.JsPublishMsgId(natsdomain.SubjJsMerchantWithdrawal.String(), data, natsdomain.NewMsgId(jsonRes.WithdrawalTimestamp+jsonRes.UserId, natsdomain.MsgActionWithdrawalRetry))
+	// TODO: change withdrawal status to error
+	err = s.withdrawals.UpdateStatus(s.db, jsonRes.WithdrawalID, domain.WITHDRAWAL_ERROR)
+	if err != nil {
+		s.l.TemplInvoiceErr("update withdrawal status error: "+err.Error(), errid, jsonRes.WithdrawalTimestamp, jsonRes.Amount, jsonRes.Crypto, logger.NA, jsonRes.MerchantId, logger.NA)
+	}
+
+	return s.natsinfra.JsPublishMsgId(natsdomain.SubjJsMerchantWithdrawal.String(), data, natsdomain.NewMsgId(jsonRes.WithdrawalTimestamp+jsonRes.MerchantId, natsdomain.MsgActionWithdrawalRetry))
 }
 
 func (s *GetMerchantWithdrawalService) handleSent(jsonRes *natsdomain.ResMerchantWithdrawal) error {
+	var errid = logger.GenErrorId()
 
 	// update balance in db
 
@@ -155,54 +164,64 @@ func (s *GetMerchantWithdrawalService) handleSent(jsonRes *natsdomain.ResMerchan
 
 	s.l.Debug("Update balance")
 
-	if err := s.db.Model(prevBalance).Update("balance", newBalance.Balance).Error; err != nil {
-		return err
-	}
+	s.db.Transaction(func(tx *gorm.DB) error {
+		err = s.withdrawals.UpdateStatus(tx, jsonRes.WithdrawalID, domain.WITHDRAWAL_SUCCESS)
+		if err != nil {
+			s.l.TemplInvoiceErr("update withdrawal status error: "+err.Error(), errid, jsonRes.WithdrawalTimestamp, jsonRes.Amount, jsonRes.Crypto, logger.NA, jsonRes.MerchantId, logger.NA)
+			return err
+		}
+
+		if err := tx.Model(prevBalance).Updates(domain.Balances{Balance: newBalance.Balance}).Error; err != nil {
+			return err
+		}
+		return nil
+
+	})
 
 	// TODO: refactoring
 	// send notification to telegram
-	err = func() error {
-		const retries = 5
-		const delay = time.Second * 30
+	// err = func() error {
+	// 	const retries = 5
+	// 	const delay = time.Second * 30
 
-		for i := 0; i < retries; i++ {
-			url := fmt.Sprintf("https://api.telegram.org/bot%s/sendMessage", s.config.
-				Telegram.Token)
+	// 	for i := 0; i < retries; i++ {
+	// 		url := fmt.Sprintf("https://api.telegram.org/bot%s/sendMessage", s.config.
+	// 			Telegram.Token)
 
-			text := fmt.Sprintf("💰 %s %s sent to your address (%s)", jsonRes.Amount, jsonRes.Crypto, jsonRes.ToAddress)
+	// 		text := fmt.Sprintf("💰 %s %s sent to your address (%s)", jsonRes.Amount, jsonRes.Crypto, jsonRes.ToAddress)
 
-			jsonData := fmt.Sprintf(`{
-		"chat_id": "%s",
-		"text": "%s"
-	}`, jsonRes.UserId, text)
+	// 		jsonData := fmt.Sprintf(`{
+	// 	"chat_id": "%s",
+	// 	"text": "%s"
+	// }`, jsonRes.UserId, text)
 
-			s.l.Debug("Send notification to telegram", "url", url, "jsonData", jsonData)
+	// 		s.l.Debug("Send notification to telegram", "url", url, "jsonData", jsonData)
 
-			resp, err := http.Post(url, "application/json", bytes.NewBufferString(jsonData))
-			if err != nil {
-				return err
-			}
-			defer resp.Body.Close()
+	// 		resp, err := http.Post(url, "application/json", bytes.NewBufferString(jsonData))
+	// 		if err != nil {
+	// 			return err
+	// 		}
+	// 		defer resp.Body.Close()
 
-			if resp.StatusCode == 200 { // OK
-				return nil
-			}
+	// 		if resp.StatusCode == 200 { // OK
+	// 			return nil
+	// 		}
 
-			if resp.StatusCode == 429 { // Too Many Requests
-				time.Sleep(delay)
-				continue
-			}
+	// 		if resp.StatusCode == 429 { // Too Many Requests
+	// 			time.Sleep(delay)
+	// 			continue
+	// 		}
 
-			if resp.StatusCode >= 500 { // internal server error
-				time.Sleep(delay)
-				continue
-			}
+	// 		if resp.StatusCode >= 500 { // internal server error
+	// 			time.Sleep(delay)
+	// 			continue
+	// 		}
 
-			// other status code
-			return fmt.Errorf("http post returned an unknown status code %d", resp.StatusCode)
-		}
-		return nil
-	}()
+	// 		// other status code
+	// 		return fmt.Errorf("http post returned an unknown status code %d", resp.StatusCode)
+	// 	}
+	// 	return nil
+	// }()
 
 	return err
 }
@@ -242,7 +261,7 @@ start:
 		goto start
 	}
 
-	// TODO; nats balance когда 0 показывает, что 0.025814454365697
+	// BUG; nats balance when 0 shows 0.025814454365697
 	s.l.Debug("Balances", "merchant id", merchantId, "db balance", prevBalance, "nats balance", b.Balance, "attempts", attempts)
 
 	if b.Balance.GreaterThanOrEqual(prevBalance) { // prevBalance должен быть меньше

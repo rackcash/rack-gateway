@@ -28,7 +28,7 @@ run_currency:
 	cd blockchain && SECRETS=$(SECRETS) CONFIG=$(CURRENCY_CONFIG) go run .
 run_logger:
 	# killall racklog || true
-	cd rackLogger && ENVPATH=$(LOGGER_ENV) go run . &
+	cd logger && ENVPATH=$(LOGGER_ENV) go run . &
 run_web:
 	cd api && TZ=UTC+3 SECRETS=$(SECRETS) CONFIG=$(WEB_CONFIG) ENVPATH=$(WEB_ENV) go run .
 

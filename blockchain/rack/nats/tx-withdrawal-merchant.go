@@ -31,7 +31,6 @@ func (app *App) MerchantWithdrawal(msg jetstream.Msg, withdrawMsg *natsdomain.Re
 	}
 
 	fmt.Println("WITHDRAWAL TIMESTAMP", withdrawMsg.WithdrawalTimestamp)
-	fmt.Println("WITHDRAWAL USERID", withdrawMsg.UserId)
 	// return
 
 	// TODO: add more cryptocurrencies
@@ -52,7 +51,8 @@ func (app *App) withdrawMerchantEth(withdrawMsg *natsdomain.ReqMerchantWithdrawa
 	var withdrawResponse natsdomain.ResMerchantWithdrawal
 
 	withdrawResponse.WithdrawalTimestamp = withdrawMsg.WithdrawalTimestamp
-	withdrawResponse.UserId = withdrawMsg.UserId
+	withdrawResponse.WithdrawalID = withdrawMsg.WithdrawalID
+	// withdrawResponse.UserId = withdrawMsg.UserId
 
 	finalAmountWei := eth.EtherToWei(finalAmount)
 
@@ -79,7 +79,7 @@ func (app *App) withdrawMerchantEth(withdrawMsg *natsdomain.ReqMerchantWithdrawa
 		sent, err := eth.SendTx(app.EthClient, tx)
 		if err != nil { // error
 			slog.Debug(err.Error())
-			app.merchantWithdrawalHandleError(err, withdrawResponse, natsdomain.NewMsgId(withdrawMsg.WithdrawalTimestamp+withdrawMsg.UserId, natsdomain.MsgActionError))
+			app.merchantWithdrawalHandleError(err, withdrawResponse, natsdomain.NewMsgId(withdrawMsg.WithdrawalTimestamp+withdrawMsg.MerchantId, natsdomain.MsgActionError))
 			return
 		}
 
@@ -96,7 +96,8 @@ func (app *App) withdrawMerchantTon(withdrawMsg *natsdomain.ReqMerchantWithdrawa
 	var withdrawResponse natsdomain.ResMerchantWithdrawal
 
 	withdrawResponse.WithdrawalTimestamp = withdrawMsg.WithdrawalTimestamp
-	withdrawResponse.UserId = withdrawMsg.UserId
+	withdrawResponse.WithdrawalID = withdrawMsg.WithdrawalID
+	// withdrawResponse.UserId = withdrawMsg.UserId
 
 	wallet, err := ton.GetWalletBySeed(app.Ton.Client, withdrawMsg.Private)
 	if err != nil {
@@ -146,7 +147,8 @@ func (app *App) withdrawMerchantSol(withdrawMsg *natsdomain.ReqMerchantWithdrawa
 	var withdrawResponse natsdomain.ResMerchantWithdrawal
 
 	withdrawResponse.WithdrawalTimestamp = withdrawMsg.WithdrawalTimestamp
-	withdrawResponse.UserId = withdrawMsg.UserId
+	withdrawResponse.WithdrawalID = withdrawMsg.WithdrawalID
+	// withdrawResponse.UserId = withdrawMsg.UserId
 
 	pbc, err := sol.StringToPBC(withdrawMsg.ToAddress)
 	if err != nil {
@@ -222,7 +224,20 @@ func (app *App) withdrawMerchantSol(withdrawMsg *natsdomain.ReqMerchantWithdrawa
 
 func (app *App) merchantWithdrawalTxError(err error, withdrawMsg *natsdomain.ReqMerchantWithdrawal, finalAmount decimal.Decimal, txHash string) {
 	res := natsdomain.ResMerchantWithdrawal{
+		ReqMerchantWithdrawal: natsdomain.ReqMerchantWithdrawal{
+			Withdrawal: natsdomain.Withdrawal{
+				FromAddress: withdrawMsg.FromAddress,
+				MerchantId:  withdrawMsg.MerchantId,
+				ToAddress:   withdrawMsg.ToAddress,
+				Private:     withdrawMsg.Private,
+				Crypto:      withdrawMsg.Crypto,
+				Amount:      withdrawMsg.Amount,
+			},
+			WithdrawalID:        withdrawMsg.WithdrawalID,
+			WithdrawalTimestamp: withdrawMsg.WithdrawalTimestamp,
+		},
 		// Error:      ,
+
 		// MerchantId: withdrawMsg.MerchantId,
 		// InvoiceId:  withdrawMsg.InvoiceId,
 		// Crypto:     withdrawMsg.Crypto,
@@ -234,6 +249,13 @@ func (app *App) merchantWithdrawalTxError(err error, withdrawMsg *natsdomain.Req
 		// TxTempWallet: withdrawMsg.TxTempWallet,
 	}
 
+	// FromAddress: jsonRes.FromAddress,
+	// MerchantId:  jsonRes.MerchantId,
+	// ToAddress:   jsonRes.ToAddress,
+	// Private:     jsonRes.Private,
+	// Crypto:      jsonRes.Crypto,
+	// Amount:      jsonRes.Amount,
+
 	res.Error.Msg = err.Error()
 
 	data, err := json.Marshal(res)
@@ -243,7 +265,7 @@ func (app *App) merchantWithdrawalTxError(err error, withdrawMsg *natsdomain.Req
 		return
 	}
 
-	_, err = app.Ns.Js.Publish(context.Background(), natsdomain.SubjResMerchantWithdrawal.String(), data, jetstream.WithMsgID(natsdomain.NewMsgId(withdrawMsg.WithdrawalTimestamp+withdrawMsg.UserId, natsdomain.MsgActionError)))
+	_, err = app.Ns.Js.Publish(context.Background(), natsdomain.SubjResMerchantWithdrawal.String(), data, jetstream.WithMsgID(natsdomain.NewMsgId(withdrawMsg.WithdrawalTimestamp+withdrawMsg.MerchantId, natsdomain.MsgActionError)))
 	if err != nil {
 		fmt.Println("publish error: ", err)
 		return
@@ -252,6 +274,7 @@ func (app *App) merchantWithdrawalTxError(err error, withdrawMsg *natsdomain.Req
 }
 
 func (app *App) merchantWithdrawalHandleError(err error, withdrawResponse natsdomain.ResMerchantWithdrawal, msgId string) {
+	// BUG: invalid struct (merchantWithdrawalTxError)
 	withdrawResponse.Status = natsdomain.MerchantWithdrawalStatusError
 	// withdrawResponse.TxStatus = natsdomain.WithdrawalTxStatusError
 	withdrawResponse.Amount = decimal.NewFromInt(0)
@@ -283,7 +306,7 @@ func (app *App) merchantWithdrawalTxSuccess(withdrawResponse natsdomain.ResMerch
 		return
 	}
 
-	var msgId = natsdomain.NewMsgId(withdrawResponse.WithdrawalTimestamp+withdrawResponse.UserId, natsdomain.MsgActionSuccess)
+	var msgId = natsdomain.NewMsgId(withdrawResponse.WithdrawalTimestamp+withdrawResponse.MerchantId, natsdomain.MsgActionSuccess)
 
 	fmt.Println("MSG ID " + msgId)
 	_, err = app.Ns.Js.Publish(context.Background(), natsdomain.SubjResMerchantWithdrawal.String(), data, jetstream.WithMsgID(msgId))

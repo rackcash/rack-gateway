@@ -28,13 +28,22 @@ const (
 	ErrMsgMerchantIdExists   = "merchant with that id already exists"
 	ErrMsgMerchantNameExists = "merchant with that name already exists"
 
+	ErrMsgMerchantNotFound = "merchant not found"
+
+	ErrMsgInsufficientFundsParams = "insufficient funds. available: %s"
+
+	ErrMsgWithdrawalNotFound = "withdrawal not found"
+
+	ErrMsgGetBalanceError = "get balance error"
+
 	ErrMsgSecurityError         = "security error"
 	ErrMsgApiKeyNotFound        = "api key not found"
+	ErrMsgApiKeyInvalid         = "invalid api key"
 	ErrMsgInvalidInvoiceId      = "invalid invoice id"
 	ErrConfigNotFound           = "config not found"
 	ErrMsgCryptoAlreadySelected = "cryptocurrency already selected"
 	ErrMsgInvalidCrypto         = "invalid cryptocurrency"
-	ErrMsgInitBalancesError     = "can't init bala"
+	ErrMsgInitBalancesError     = "can't init balances"
 )
 
 var (

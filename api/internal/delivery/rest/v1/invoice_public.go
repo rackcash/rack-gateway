@@ -217,5 +217,4 @@ func (h *Handler) initPubInvoiceRoutes(g *gin.RouterGroup) {
 	g.POST("/invoice/create", h.invoiceCreate)
 	g.POST("/invoice/info", h.info)
 	g.GET("/invoice/qr-code/:invoice_id", h.qrCode)
-
 }

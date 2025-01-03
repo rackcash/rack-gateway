@@ -40,6 +40,7 @@ type Invoices interface {
 
 type Wallets interface {
 	FindByInvoiceID(tx *gorm.DB, invoiceID string) (*domain.Wallets, error)
+	FindByMerchantID(tx *gorm.DB, merchantId string, crypto string) (*domain.Wallets, error)
 	Create(tx *gorm.DB, wallet *domain.Wallets) error
 	CreateAndSave(invoiceId string, merchantId string, crypto domain.Crypto) (*domain.Wallets, error)
 }
@@ -85,6 +86,11 @@ type WebhookSender interface {
 	GetList() []string
 }
 
+type Withdrawals interface {
+	Create(tx *gorm.DB, withdrawal *domain.Withdrawals) error
+	Find(tx *gorm.DB, withdrawalId string) (*domain.Withdrawals, error)
+}
+
 type Services struct {
 	// TODO: Autostart
 	OutboxEvents          OutboxEvents
@@ -98,6 +104,7 @@ type Services struct {
 	QrCodes       QrCodes
 	Rates         Rates
 	WebhookSender WebhookSender
+	Withdrawals   Withdrawals
 }
 
 // TODO: code
@@ -115,17 +122,20 @@ func HewServices(ns *natsdomain.Ns, db *gorm.DB, l logger.Logger, config *config
 	eventsRepo := repository.InitEventsRepo()
 	GetWithdrawalService := NewGetWithdrawalService(db, n, l, eventsRepo, walletsRepo, balancesRepo, invoiceService, webhookSender, config)
 
+	withdrawalsRepo := repository.InitWithdrawalsRepo()
+
 	return &Services{
-		GetMerchantWithdrawal: NewGetMerchantWithdrawalService(db, n, l, balancesRepo, config),
+		GetMerchantWithdrawal: NewGetMerchantWithdrawalService(db, n, l, balancesRepo, withdrawalsRepo, config),
 		WebhookSender:         webhookSender,
 		OutboxEvents:          NewOutboxEventsService(invoiceService, balancesRepo, walletsRepo, GetWithdrawalService, n, db, l, eventsRepo, webhookSender),
 		GetWithdrawal:         GetWithdrawalService,
 		// CpConfigs:             NewCpConfigsService(db, repository.InitCpConfigsRepo()),
-		Merchants: NewMerchantsService(db, repository.InitMerchantsRepo(), ns),
-		Invoices:  invoiceService,
-		Wallets:   NewWalletsService(db, walletsRepo, ns),
-		Balances:  NewBalancesService(db, balancesRepo, ns),
-		QrCodes:   NewQrCodesService(),
-		Rates:     NewRatesService(cache.InitStorage(), ns),
+		Merchants:   NewMerchantsService(db, repository.InitMerchantsRepo(), ns),
+		Invoices:    invoiceService,
+		Wallets:     NewWalletsService(db, walletsRepo, ns),
+		Balances:    NewBalancesService(db, balancesRepo, ns),
+		QrCodes:     NewQrCodesService(),
+		Rates:       NewRatesService(cache.InitStorage(), ns),
+		Withdrawals: NewWithdrawalService(db, withdrawalsRepo, ns),
 	}
 }

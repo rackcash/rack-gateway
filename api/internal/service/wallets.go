@@ -26,6 +26,10 @@ func (s *WalletsService) FindByInvoiceID(tx *gorm.DB, invoiceID string) (*domain
 	return s.repo.FindByInvoiceID(tx, invoiceID)
 }
 
+func (s *WalletsService) FindByMerchantID(tx *gorm.DB, merchantID string, crypto string) (*domain.Wallets, error) {
+	return s.repo.FindByMerchantID(tx, merchantID, crypto)
+}
+
 func (s *WalletsService) Create(tx *gorm.DB, wallet *domain.Wallets) error {
 	return s.repo.Create(tx, wallet)
 }
