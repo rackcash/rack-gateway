@@ -1,0 +1,14 @@
+{
+  "name": "telegram-bot",
+  "module": "index.ts",
+  "type": "module",
+  "devDependencies": {
+    "@types/bun": "latest"
+  },
+  "peerDependencies": {
+    "typescript": "^5.0.0"
+  },
+  "dependencies": {
+    "telegraf": "4.14.0"
+  }
+}
