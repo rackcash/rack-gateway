@@ -15,7 +15,7 @@ bot.start(async (ctx) => {
     const url = RACK_URL + "/invoice/create";
     const data = {
         lifetime: 10, // 10 minutes
-        amount: 0.001437, // 1 ETH
+        amount: 0.001437,
         api_key: RACK_API_KEY,
         cryptocurrency: "eth",
     };
