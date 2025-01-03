@@ -207,7 +207,7 @@ func (h *Handler) qrCode(c *gin.Context) {
 		return
 	}
 
-	wallet, err := h.services.Wallets.FindByInvoiceID(h.db, c.Query("invoice_id"))
+	wallet, err := h.services.Wallets.FindByInvoiceID(h.db, invoiceId)
 	if err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
 			responseErr(c, http.StatusBadRequest, domain.ErrMsgInvalidInvoiceId, "")
@@ -224,16 +224,6 @@ func (h *Handler) qrCode(c *gin.Context) {
 		h.log.TemplInvoiceErr("qr code find or new error: "+err.Error(), errid, invoiceId, decimal.Zero, wallet.Crypto, c.Request.RequestURI, wallet.MerchantID, c.ClientIP())
 		return
 	}
-
-	fmt.Println(wallet.Address)
-	// fmt.Println(qrCode)
-
-	// imageData, err := base64.StdEncoding.DecodeString(qrCode)
-	// if err != nil {
-	// 	responseErr(c, http.StatusInternalServerError, domain.ErrMsgInternalServerError, errid)
-	// 	h.log.TemplInvoiceErr("qr code decode error: "+err.Error(), errid, invoiceId, decimal.Zero, wallet.Crypto, c.Request.RequestURI, wallet.MerchantID, c.ClientIP())
-	// 	return
-	// }
 
 	c.Data(http.StatusOK, "image/png", []byte(qrCode))
 }
