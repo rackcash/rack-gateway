@@ -1,35 +1,27 @@
 
-import { Telegraf } from "telegraf";
-
 import { writeFileSync } from "fs";
+import { Telegraf } from "telegraf";
 
 const BOT_TOKEN = "";
 const RACK_URL = "http://127.0.0.1:8888/v1";
 const RACK_API_KEY = "ae9f3181cac51f65692e0e8d5f71c5a2042700c421caa595926aab777a391d55";
 
-
 const bot = new Telegraf(BOT_TOKEN);
-
-
 
 let info = await bot.telegram.getMe();
 console.log("Started: https://t.me/" + info.username);
-
-
-
 
 bot.start(async (ctx) => {
     const url = RACK_URL + "/invoice/create";
     const data = {
         lifetime: 10, // 10 minutes
-        amount: 0.001437, // 1 ETH
+        amount: 0.001437,
         api_key: RACK_API_KEY,
         cryptocurrency: "eth",
     };
 
     const response = await fetch(url, { method: "POST", body: JSON.stringify(data) });
     const result = await response.json();
-
 
     const qrCode = await fetch(result.invoice.wallet.qr_code).then(res => res.arrayBuffer());
     writeFileSync("qr_code.png", Buffer.from(qrCode));
@@ -43,8 +35,6 @@ bot.start(async (ctx) => {
             ]
         }
     });
-
-
 });
 
 
@@ -59,10 +49,8 @@ bot.action(/check_tx:(.+)/, async (ctx) => {
         api_key: RACK_API_KEY,
     };
 
-
     const response = await fetch(url, { method: "POST", body: JSON.stringify(data) });
     const result = await response.json();
-
 
     if (result.is_paid) {
         return await ctx.reply("paid");
@@ -72,34 +60,8 @@ bot.action(/check_tx:(.+)/, async (ctx) => {
 });
 
 
-
-
 bot.catch(err => {
     console.log("Bot Catch: " + err);
 });
 
 bot.launch({ dropPendingUpdates: true });
-
-
-
-process
-    .on('unhandledRejection', (reason, p) => {
-        console.log(`Unhandled Rejection: ${reason}`);
-        bot.stop();
-        process.exit(1);
-    })
-    .on('uncaughtException', (reason, p) => {
-        console.log(`Uncaught Exception: ${reason}`);
-        bot.stop();
-        process.exit(1);
-    })
-
-    .once("SIGINT", () => {
-        bot.stop("SIGINT");
-        process.exit(0);
-    })
-    .once("SIGTERM", () => {
-        bot.stop("SIGTERM");
-        process.exit(0);
-    }
-    );
