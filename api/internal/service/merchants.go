@@ -2,6 +2,7 @@ package service
 
 import (
 	"infra/api/internal/domain"
+	"infra/api/internal/infra/postgres"
 	"infra/api/internal/repository"
 	"infra/pkg/nats/natsdomain"
 
@@ -32,4 +33,15 @@ func (s *MerchantsService) FindByName(tx *gorm.DB, apiKey string) (*domain.Merch
 
 func (s *MerchantsService) Create(tx *gorm.DB, merchant *domain.Merchants) error {
 	return s.repo.Create(tx, merchant)
+}
+
+func (s *MerchantsService) ApiKeyExists(tx *gorm.DB, apiKey string) (bool, error) {
+	_, err := s.FindByApiKey(tx, apiKey)
+	if err != nil {
+		if postgres.IsNotFound(err) {
+			return false, nil
+		}
+		return false, err
+	}
+	return true, nil
 }

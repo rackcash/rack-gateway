@@ -3,20 +3,24 @@ package service
 import (
 	"encoding/json"
 	"fmt"
+	"infra/api/internal/domain"
 	"infra/api/internal/infra/cache"
 	"infra/api/internal/infra/nats"
 	"infra/pkg/nats/natsdomain"
 	"infra/pkg/utils"
 	"time"
+
+	"github.com/shopspring/decimal"
 )
 
 type RatesService struct {
-	cache *cache.Cache
-	ns    *natsdomain.Ns
+	cache    *cache.Cache
+	invoices *InvoicesService
+	ns       *natsdomain.Ns
 }
 
-func NewRatesService(cache *cache.Cache, ns *natsdomain.Ns) *RatesService {
-	return &RatesService{cache: cache, ns: ns}
+func NewRatesService(cache *cache.Cache, ns *natsdomain.Ns, invoices *InvoicesService) *RatesService {
+	return &RatesService{cache: cache, ns: ns, invoices: invoices}
 }
 
 func (s *RatesService) Get(amountCurrency string) (*natsdomain.Rates, error) {
@@ -37,6 +41,30 @@ func (s *RatesService) Get(amountCurrency string) (*natsdomain.Rates, error) {
 
 	s.cache.Set(amountCurrency, rates, time.Minute*5)
 	return rates, nil
+}
+
+func (s *RatesService) Convert(amount decimal.Decimal, crypto domain.Crypto, rates *natsdomain.Rates) (decimal.Decimal, decimal.Decimal, error) {
+	// TODO: add more cryptocurrencies
+	var converted decimal.Decimal
+	var rate decimal.Decimal
+
+	switch crypto {
+	case domain.CRYPTO_SOL:
+		fmt.Println("RATES SOL", rates.Sol.String())
+		rate = rates.Sol
+		converted = s.invoices.CalculateFinAmount(amount, rate, 5)
+	case domain.CRYPTO_ETH:
+		fmt.Println("RATES ETH", rates.Eth.String())
+		rate = rates.Eth
+		converted = s.invoices.CalculateFinAmount(amount, rate)
+	case domain.CRYPTO_TON:
+		fmt.Println("RATES TON", rates.Ton.String())
+		rate = rates.Ton
+		converted = s.invoices.CalculateFinAmount(amount, rate, 3)
+	default:
+		return decimal.Zero, decimal.Zero, fmt.Errorf(domain.ErrMsgInvalidCrypto)
+	}
+	return converted, rate, nil
 }
 
 func getRatesFromNats(ns *natsdomain.Ns, currency string) (*natsdomain.Rates, error) {

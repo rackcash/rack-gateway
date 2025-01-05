@@ -34,6 +34,30 @@ type responseWithdrawalInfo struct {
 	CreatedAt string `json:"created_at"`
 }
 
+// /currency/convert
+type responseConverterOK struct {
+	Error          bool            `json:"error"`
+	Fiat           string          `json:"fiat"`
+	Amount         decimal.Decimal `json:"amount"`
+	Cryptocurrency string          `json:"cryptocurrency"`
+	Converted      decimal.Decimal `json:"converted"`
+	Rate           decimal.Decimal `json:"rate"`
+}
+
+type responseRates struct {
+	Eth decimal.Decimal `json:"eth"`
+	Ltc decimal.Decimal `json:"ltc"`
+	Sol decimal.Decimal `json:"sol"`
+	Ton decimal.Decimal `json:"ton"`
+}
+
+// /currency/rates
+type responseRatesOK struct {
+	Error bool          `json:"error"`
+	Fiat  string        `json:"fiat"`
+	Rates responseRates `json:"rates"`
+}
+
 // /invoice/create
 type responseInvoiceCreatedInfo struct {
 	Id string `json:"id"`
@@ -48,7 +72,7 @@ type responseInvoiceCreated struct {
 }
 
 type responseMerchantCreated struct {
-	Error      bool
+	Error      bool   `json:"error"`
 	ApiKey     string `json:"api_key"`
 	MerchantId string `json:"merchant_id"`
 }

@@ -27,15 +27,15 @@ type limit struct {
 
 // TODO: change
 var amountLimits = map[string]limit{
-	"eth": {Min: decimal.NewFromFloat(0), Max: decimal.NewFromInt(100000000)},
-	"ton": {Min: decimal.NewFromFloat(0), Max: decimal.NewFromInt(100000000)},
-	"sol": {Min: decimal.NewFromFloat(0), Max: decimal.NewFromInt(100000000)},
+	"eth": {Min: decimal.NewFromFloat(0.001), Max: decimal.NewFromInt(100000000)},
+	"ton": {Min: decimal.NewFromFloat(0.001), Max: decimal.NewFromInt(100000000)},
+	"sol": {Min: decimal.NewFromFloat(0.001), Max: decimal.NewFromInt(100000000)},
 }
 
 type NewInvoiceData struct {
 	Lifetime       int     `json:"lifetime" validate:"required,gte=0,lte=4320"`
 	Cryptocurrency string  `json:"cryptocurrency" validate:"required,oneof=eth ton sol"`
-	AmountFloat    float64 `json:"amount" validate:"required"`
+	AmountFloat    float64 `json:"amount" validate:"required,amount"`
 	ApiKey         string  `json:"api_key" validate:"min=64,max=64"` // sha256
 	Webhook        string  `json:"webhook" validate:"webhook,max=60"`
 
@@ -88,9 +88,9 @@ func validateAmount(fl validator.FieldLevel) bool {
 	amount := fl.Field().Float()
 
 	// TODO: fix
-	amountCurrency := obj.FieldByName("cryptocurrency")
+	amountCurrency := obj.FieldByName("Cryptocurrency")
 	if !amountCurrency.IsValid() {
-		fmt.Println("Invalid field by name: cryptocurrency")
+		fmt.Println("Invalid field by name: Cryptocurrency")
 		return false
 	}
 

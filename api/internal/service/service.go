@@ -19,6 +19,7 @@ type Merchants interface {
 	FindByApiKey(tx *gorm.DB, apiKey string) (*domain.Merchants, error)
 	FindByName(tx *gorm.DB, merchantName string) (*domain.Merchants, error)
 	Create(tx *gorm.DB, merchant *domain.Merchants) error
+	ApiKeyExists(tx *gorm.DB, apiKey string) (bool, error)
 }
 
 type Invoices interface {
@@ -61,6 +62,7 @@ type QrCodes interface {
 
 type Rates interface {
 	Get(amountCurrency string) (*natsdomain.Rates, error)
+	Convert(amount decimal.Decimal, crypto domain.Crypto, rates *natsdomain.Rates) (decimal.Decimal, decimal.Decimal, error)
 }
 type Locker interface {
 	Lock(key string)
@@ -135,7 +137,7 @@ func HewServices(ns *natsdomain.Ns, db *gorm.DB, l logger.Logger, config *config
 		Wallets:     NewWalletsService(db, walletsRepo, ns),
 		Balances:    NewBalancesService(db, balancesRepo, ns),
 		QrCodes:     NewQrCodesService(),
-		Rates:       NewRatesService(cache.InitStorage(), ns),
+		Rates:       NewRatesService(cache.InitStorage(), ns, invoiceService),
 		Withdrawals: NewWithdrawalService(db, withdrawalsRepo, ns),
 	}
 }
