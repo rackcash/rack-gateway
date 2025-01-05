@@ -1,87 +1,124 @@
 package config
 
 import (
-	"fmt"
 	"os"
 	"strings"
-	"time"
+	"sync"
 
-	"github.com/BurntSushi/toml"
+	"github.com/kelseyhightower/envconfig"
 	"gorm.io/gorm"
 )
 
 type Config struct {
-	DB *gorm.DB
+	DB *gorm.DB `ignored:"true"`
 
-	ProxyPath string   `toml:"proxy_path"` // used in webhook-sender
-	ProxyList []string `toml:"-"`          // reads proxies from ProxyPath and fills it with
+	// TODO: remove
+	// ProxyPath string   `toml:"proxy_path"` // used in webhook-sender
+	// ProxyList []string `toml:"-"`          // reads proxies from ProxyPath and fills it with
 
-	Prod_env bool
+	Prod_env bool `envconfig:"PROD_ENV"          required:"true"`
 
-	Telegram struct {
-		Token string `toml:"token"`
-	}
+	// Telegram struct {
+	// 	Token string `toml:"token"`
+	// }
 
 	Testing struct {
-		Enabled              bool
-		TxConfirmDelay       time.Duration `toml:"tx_confirm_delay"`
-		TxFinProcessingDelay time.Duration `toml:"tx_fin_processing_delay"`
-		TxFinDelay           time.Duration `toml:"tx_fin_delay"`
-	} `toml:"testing"`
+		Enabled              bool `envconfig:"TESTING"          required:"true"`
+		TxConfirmDelay       int  `envconfig:"TESTING_TX_CONFIRM_DELAY"          required:"true"`
+		TxFinProcessingDelay int  `envconfig:"TX_FIN_PROCESSING_DELAY"          required:"true"`
+		TxFinDelay           int  `envconfig:"TX_FIN_DELAY"          required:"true"`
+	}
 
-	PrivateKey string `toml:"private_key"`
-	Postgres   struct {
-		Host     string
-		User     string
-		Password string
-		Db_name  string
-		Port     uint16
-		Ssl_mode string
+	Postgres struct {
+		Host     string `envconfig:"DB_HOST"          required:"true"`
+		User     string `envconfig:"DB_USER"          required:"true"`
+		Password string `envconfig:"DB_PASSWORD"          required:"true"`
+		Db_name  string `envconfig:"DB_NAME"          required:"true"`
+		Port     uint16 `envconfig:"DB_PORT"          required:"true"`
+		Ssl_mode string `envconfig:"DB_SSL_MODE"          required:"true"`
 	}
 	Nats struct {
-		Servers     string
-		TomlServers []string `toml:"servers"`
+		Servers string `envconfig:"NATS_SERVERS"          required:"true"`
+		// TomlServers []string `toml:"servers"`
 	}
-	Api struct {
-		Ipv4  string
-		Proto string
-	} `toml:"rack_web"`
+
+	PrivateKey string `envconfig:"API_ADMIN_KEY"          required:"true"`
+	Api        struct {
+		Ipv4  string `envconfig:"API_IPV4"          required:"true"`
+		Proto string `envconfig:"API_PROTO"          required:"true"`
+	}
 }
 
+type ConfigS struct {
+	DB *gorm.DB `ignored:"true"`
+
+	// TODO: remove
+	// ProxyPath string   `toml:"proxy_path"` // used in webhook-sender
+	// ProxyList []string `toml:"-"`          // reads proxies from ProxyPath and fills it with
+
+	Prod_env bool `envconfig:"PROD_ENV"          required:"true"`
+
+	// Telegram struct {
+	// 	Token string `toml:"token"`
+	// }
+
+	Testing struct {
+		Enabled              bool `envconfig:"TESTING"          required:"true"`
+		TxConfirmDelay       int  `envconfig:"TESTING_TX_CONFIRM_DELAY"          required:"true"`
+		TxFinProcessingDelay int  `envconfig:"TX_FIN_PROCESSING_DELAY"          required:"true"`
+		TxFinDelay           int  `envconfig:"TX_FIN_DELAY"          required:"true"`
+	}
+
+	// PrivateKey string `toml:"private_key"`
+	Postgres struct {
+		Host     string `envconfig:"DB_HOST"          required:"true"`
+		User     string `envconfig:"DB_USER"          required:"true"`
+		Password string `envconfig:"DB_PASSWORD"          required:"true"`
+		Db_name  string `envconfig:"DB_NAME"          required:"true"`
+		Port     uint16 `envconfig:"DB_PORT"          required:"true"`
+		Ssl_mode string `envconfig:"DB_SSL_MODE"          required:"true"`
+	}
+	Nats struct {
+		Servers string `envconfig:"NATS_SERVERS"          required:"true"`
+		// TomlServers []string `toml:"servers"`
+	}
+	Api struct {
+		Ipv4  string `envconfig:"API_IPV4"          required:"true"`
+		Proto string `envconfig:"API_PROTO"          required:"true"`
+	}
+}
+
+var once sync.Once
+
 func ReadConfig() *Config {
-	byte_config, err := os.ReadFile(os.Getenv("CONFIG"))
-	if err != nil {
-		panic(err)
-	}
-
 	var config Config
-	_, err = toml.Decode(string(byte_config), &config)
-	if err != nil {
-		panic(err)
-	}
 
-	fmt.Println("PATH", config.ProxyPath)
+	once.Do(func() {
+		if err := envconfig.Process("", &config); err != nil {
+			panic(err)
+		}
+	})
 
-	user, err := os.ReadFile(os.Getenv("SECRETS") + "/nats-user.txt")
-	if err != nil {
-		panic(err)
-	}
+	// user, err := os.ReadFile(os.Getenv("SECRETS") + "/nats-user.txt")
+	// if err != nil {
+	// 	panic(err)
+	// }
 
-	pass, err := os.ReadFile(os.Getenv("SECRETS") + "/nats-password.txt")
-	if err != nil {
-		panic(err)
-	}
+	// pass, err := os.ReadFile(os.Getenv("SECRETS") + "/nats-password.txt")
+	// if err != nil {
+	// 	panic(err)
+	// }
 
-	var formatedServers string
-	for _, x := range config.Nats.TomlServers {
-		connectUrl := fmt.Sprintf("nats://%s:%s@%s,", user, pass, string(x))
-		formatedServers += connectUrl
-	}
+	// var formatedServers string
+	// for _, x := range config.Nats.TomlServers {
+	// 	connectUrl := fmt.Sprintf("nats://%s:%s@%s,", user, pass, string(x))
+	// 	formatedServers += connectUrl
+	// }
 
-	config.Nats.Servers = formatedServers
+	// config.Nats.Servers = formatedServers
 
 	// webhook proxies
-	config.ProxyList = GetProxyList(config.ProxyPath)
+	// config.ProxyList = GetProxyList(config.ProxyPath)
 
 	if config.Prod_env && config.Testing.Enabled {
 		panic("cannot use testing in prod")

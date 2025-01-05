@@ -14,7 +14,8 @@ func (h *Handler) updateProxyList(c *gin.Context) {
 
 	fmt.Println("UPDATE PROXY LIST")
 
-	h.services.WebhookSender.UpdateList(config.GetProxyList(h.config.ProxyPath))
+	// BUG: remove ""
+	h.services.WebhookSender.UpdateList(config.GetProxyList(""))
 	c.JSON(200, gin.H{
 		"ok": true,
 	})

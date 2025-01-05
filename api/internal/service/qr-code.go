@@ -2,7 +2,6 @@ package service
 
 import (
 	"bytes"
-	"encoding/base64"
 	"fmt"
 	"infra/api/internal/infra/cache"
 	"infra/pkg/utils"
@@ -113,5 +112,5 @@ func generateQrCode(content string) (string, error) {
 
 	// os.WriteFile("qr.txt", []byte(base64.RawStdEncoding.EncodeToString(qrBytes)), os.ModePerm)
 
-	return base64.RawStdEncoding.EncodeToString(qrBytes), nil
+	return string(qrBytes), nil
 }

@@ -115,7 +115,7 @@ func HewServices(ns *natsdomain.Ns, db *gorm.DB, l logger.Logger, config *config
 	balancesRepo := repository.InitBalancesRepo()
 	lockerService := NewLockerService(cache.InitStorage())
 
-	webhookSender := NewWebhookSenderService(config.ProxyList, l)
+	webhookSender := NewWebhookSenderService(nil, l)
 
 	invoiceService := NewInvoicesService(db, repository.InitInvoicesRepo(), walletsRepo, balancesRepo, lockerService, n, l, cache.InitStorage(), config)
 

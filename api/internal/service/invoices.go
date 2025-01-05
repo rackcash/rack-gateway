@@ -175,7 +175,7 @@ func (s *InvoicesService) RunCheck(ctx context.Context, cancel context.CancelFun
 					Status: "paid",
 					Paid:   true,
 				}
-				time.Sleep(s.config.Testing.TxConfirmDelay * time.Second)
+				time.Sleep(time.Duration(s.config.Testing.TxConfirmDelay) * time.Second)
 			} else {
 				// checks whether the client has sent crypto to temp wallet
 				msg, err = s.n.ReqIsPaid(invoice, tempWalletAddr)
@@ -292,7 +292,7 @@ func (s *InvoicesService) RunCheck(ctx context.Context, cancel context.CancelFun
 						// send withdrawal success msg
 						s.l.Debug("SLEEP TX FIN PROCESSING")
 
-						time.Sleep(s.config.Testing.TxFinProcessingDelay * time.Second)
+						time.Sleep(time.Duration(s.config.Testing.TxFinProcessingDelay) * time.Second)
 
 						s.l.Debug("NO SLEEP")
 

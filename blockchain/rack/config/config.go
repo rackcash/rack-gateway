@@ -1,64 +1,61 @@
 package config
 
 import (
-	"fmt"
-	"os"
+	"sync"
 
-	"github.com/BurntSushi/toml"
+	"github.com/kelseyhightower/envconfig"
 )
 
 type Config struct {
-	Prod_env bool
+	Prod_env bool `envconfig:"PROD_ENV"          required:"true"`
 	Nats     struct {
-		TomlServers []string `toml:"servers"`
-		Servers     string
+		// TomlServers []string `toml:"servers"`
+		Servers string `envconfig:"NATS_SERVERS"          required:"true"`
 	}
 	RackCurrency struct {
-		GlobalTestnet bool   `toml:"global_testnet"`
-		CoinmarketApi string `toml:"coinmarket_api"`
+		CoinmarketApi string `envconfig:"COINMARKET_API"          required:"true"`
 		Ton           struct {
-			Testnet bool
+			Testnet bool `envconfig:"TON_TESTNET"          required:"true"`
 		}
 		Sol struct {
-			Testnet bool
+			Testnet bool `envconfig:"SOL_TESTNET"          required:"true"`
 		}
 		Eth struct {
-			Testnet bool
-			ApiKey  string `toml:"api_key"`
+			Testnet bool   `envconfig:"ETH_TESTNET"          required:"true"`
+			ApiKey  string `envconfig:"ETH_RPC_KEY"          required:"true"`
 		}
-	} `toml:"rack_currency"`
+	}
 }
+
+var once sync.Once
 
 func ReadConfig() *Config {
 
-	byte_config, err := os.ReadFile(os.Getenv("CONFIG"))
-	if err != nil {
-		panic(err)
-	}
-
 	var config Config
-	_, err = toml.Decode(string(byte_config), &config)
-	if err != nil {
-		panic(err)
-	}
 
-	user, err := os.ReadFile(os.Getenv("SECRETS") + "/nats-user.txt")
-	if err != nil {
-		panic(err)
-	}
+	once.Do(func() {
+		if err := envconfig.Process("", &config); err != nil {
+			panic(err)
+		}
+	})
 
-	pass, err := os.ReadFile(os.Getenv("SECRETS") + "/nats-password.txt")
-	if err != nil {
-		panic(err)
-	}
+	// user, err := os.ReadFile(os.Getenv("SECRETS") + "/nats-user.txt")
+	// if err != nil {
+	// 	panic(err)
+	// }
 
-	var formatedServers string
-	for _, x := range config.Nats.TomlServers {
-		connectUrl := fmt.Sprintf("nats://%s:%s@%s,", user, pass, string(x))
-		formatedServers += connectUrl
-	}
+	// pass, err := os.ReadFile(os.Getenv("SECRETS") + "/nats-password.txt")
+	// if err != nil {
+	// 	panic(err)
+	// }
 
-	config.Nats.Servers = formatedServers
+	// var formatedServers string
+	// for _, x := range config.Nats.TomlServers {
+	// 	connectUrl := fmt.Sprintf("nats://%s:%s@%s,", user, pass, string(x))
+	// 	formatedServers += connectUrl
+	// }
+
+	// config.Nats.Servers = formatedServers
 
 	return &config
 }

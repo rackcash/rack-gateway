@@ -14,6 +14,9 @@ tests/
 c2.toml
 config.toml
 scripts/
+examples/telegram-bot/node_modules/
 ns-restart.sh
 start_dev.sh
 infra/
+docker/
+deploy/

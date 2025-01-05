@@ -11,7 +11,7 @@ import (
 
 func Init(config *config.Config, currencies *atomic.Int32) *ethclient.Client {
 	var url string
-	if config.RackCurrency.GlobalTestnet || config.RackCurrency.Eth.Testnet {
+	if config.RackCurrency.Eth.Testnet {
 		url = "https://holesky.infura.io/v3/"
 	} else {
 		url = "https://mainnet.infura.io/v3/"

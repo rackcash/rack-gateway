@@ -19,7 +19,7 @@ var wsUrl string
 
 func Init(config *config.Config, currencies *atomic.Int32) (*rpc.Client, *ws.Client) {
 
-	if config.RackCurrency.GlobalTestnet || config.RackCurrency.Sol.Testnet {
+	if config.RackCurrency.Sol.Testnet {
 		rpcUrl = rpc.TestNet_RPC
 		wsUrl = rpc.TestNet_WS
 	} else {

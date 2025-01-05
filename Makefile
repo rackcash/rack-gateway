@@ -9,8 +9,12 @@ ARGS := $(wordlist 2, $(words $(MAKECMDGOALS)), $(MAKECMDGOALS))
 WEB_CONFIG = ../config.toml
 CURRENCY_CONFIG = ../config.toml
 BOT_CONFIG = ./config.toml
+
 LOGGER_ENV = ../.env
 WEB_ENV = ../.env
+BLOCKCHAIN_ENV=../.env
+
+
 SECRETS = ../secrets
 BOT_SECRETS = ./secrets
 LOCALES = ./locales
@@ -25,12 +29,15 @@ run_bot:
 	# CONFIG=$(BOT_CONFIG) SECRETS=$(BOT_SECRETS) LOCALES=$(LOCALES) tsx rackBot/index.ts
 	CONFIG=$(BOT_CONFIG) SECRETS=$(BOT_SECRETS) LOCALES=$(LOCALES) bun rackBot/index.ts
 run_currency:
-	cd blockchain && SECRETS=$(SECRETS) CONFIG=$(CURRENCY_CONFIG) go run .
+	cd blockchain && ENVPATH=$(BLOCKCHAIN_ENV) go run .
 run_logger:
 	# killall racklog || true
 	cd logger && ENVPATH=$(LOGGER_ENV) go run . &
 run_web:
-	cd api && TZ=UTC+3 SECRETS=$(SECRETS) CONFIG=$(WEB_CONFIG) ENVPATH=$(WEB_ENV) go run .
+	cd api && TZ=UTC+3 ENVPATH=$(WEB_ENV) go run .
+
+build_images:
+	echo hi
 
 # parseable:
 # 	 docker run -p 8000:8000 \

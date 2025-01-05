@@ -71,9 +71,7 @@ func Run(port string) {
 
 }
 func main() {
-	path := os.Getenv("ENVPATH")
-
-	err := godotenv.Load(path)
+	err := godotenv.Load(os.Getenv("ENVPATH"))
 	if err != nil {
 		panic(err)
 	}

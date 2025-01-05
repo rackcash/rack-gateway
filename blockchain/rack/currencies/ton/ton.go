@@ -4,10 +4,7 @@ import (
 	"context"
 	"fmt"
 	"infra/blockchain/rack/config"
-	"io"
 	"log/slog"
-	"net/http"
-	"os"
 	"sync/atomic"
 	"time"
 
@@ -19,8 +16,8 @@ const (
 	TESTNET_URL = "https://ton.org/testnet-global.config.json"
 	DEFAULT_URL = "https://ton.org/global.config.json"
 
-	TESTNET_CACHE = "rack/currencies/ton/testnet-global-config.json"
-	DEFAULT_CACHE = "rack/currencies/ton/global-config.json"
+	// TESTNET_CACHE = "blockchain/rack/currencies/ton/testnet-global-config.json"
+	// DEFAULT_CACHE = "blockchain/rack/currencies/ton/global-config.json"
 )
 
 func Init(config *config.Config, currencies *atomic.Int32) (ton.APIClientWrapped, *ton.BlockIDExt) {
@@ -76,39 +73,26 @@ func ConnectTest(url string) (ton.APIClientWrapped, *ton.BlockIDExt) {
 func getTonConfig(config *config.Config) (*liteclient.GlobalConfig, error) {
 
 	// TODO: mainnet config
-	if config.RackCurrency.GlobalTestnet || config.RackCurrency.Ton.Testnet {
-		r, err := http.Get(TESTNET_URL)
-		if err != nil {
-			fmt.Println("Can't connect to testnet")
-			return liteclient.GetConfigFromFile(TESTNET_CACHE) // try to use the cache on a connection error
-		}
-		defer r.Body.Close()
+	if config.RackCurrency.Ton.Testnet {
+		return liteclient.GetConfigFromUrl(context.Background(), TESTNET_URL)
 
-		body, err := io.ReadAll(r.Body)
-		if err != nil {
-			panic(err)
-		}
+		// r, err := http.Get(TESTNET_URL)
+		// if err != nil {
+		// 	fmt.Println("Can't connect to testnet")
+		// 	return liteclient.GetConfigFromUrl(context.Background(), TESTNET_URL)
+		// }
+		// defer r.Body.Close()
 
-		_ = os.WriteFile(TESTNET_CACHE, body, os.ModePerm)
+		// body, err := io.ReadAll(r.Body)
+		// if err != nil {
+		// 	panic(err)
+		// }
 
-		return liteclient.GetConfigFromFile(TESTNET_CACHE)
+		// _ = os.WriteFile(TESTNET_CACHE, body, os.ModePerm)
+
+		// return liteclient.GetConfigFromFile(TESTNET_CACHE)
 	}
-
-	r, err := http.Get(DEFAULT_CACHE)
-	if err != nil {
-		fmt.Println("Can't connect to default net")
-		return liteclient.GetConfigFromFile(DEFAULT_CACHE) // try to use the cache on a connection error
-	}
-	defer r.Body.Close()
-
-	body, err := io.ReadAll(r.Body)
-	if err != nil {
-		panic(err)
-	}
-
-	_ = os.WriteFile(DEFAULT_CACHE, body, os.ModePerm)
-
-	return liteclient.GetConfigFromFile(DEFAULT_CACHE)
+	return liteclient.GetConfigFromUrl(context.Background(), DEFAULT_URL)
 
 }
 

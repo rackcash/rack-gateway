@@ -2,19 +2,15 @@ FROM golang:1.22-alpine AS dev
 
 WORKDIR /root/app
 
-ARG CURRENCY_PATH=blockchain
-ARG CURRENCY_BIN=currency
+ARG BLOCKCHAIN_PATH=blockchain
+ARG BLOCKCHAIN_BIN=blockchain_bin
+ARG PKG_PATH=pkg
 
-ARG SECRETS=secrets
-ENV SECRETS=${SECRETS}
+COPY ${BLOCKCHAIN_PATH}/ ./${BLOCKCHAIN_PATH}/
+COPY ${PKG_PATH}/ ./${PKG_PATH}/
+RUN rm -r ${PKG_PATH}/protos
 
-COPY ${CURRENCY_PATH}/ ./${CURRENCY_PATH}/
-COPY config.toml .
-COPY .env .
+RUN go mod init infra && go mod tidy
+RUN cd ${BLOCKCHAIN_PATH} && go build -o ${BLOCKCHAIN_BIN} && cd - && mv ${BLOCKCHAIN_PATH}/${BLOCKCHAIN_BIN} ./
 
-ENV ENVPATH=./.env
-ENV CONFIG=./config.toml
-
-RUN cd ${CURRENCY_PATH} && go build -o ${CURRENCY_BIN} && cd - && mv ${CURRENCY_PATH}/${CURRENCY_BIN} ./
-
-CMD ["/bin/sh", "-c", "./currency"]
+CMD ["/bin/sh", "-c", "./blockchain_bin"]
