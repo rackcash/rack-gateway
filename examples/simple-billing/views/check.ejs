@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Check Invoice</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+
+<body>
+    <div class="container">
+        <div id="qrCode" class="qr-code">
+            <img src="<%= qr_code %>" alt="" style="max-width: 300px;" />
+        </div>
+        <div id="msg" class="msg" style="font-size: 15px;">
+            <p>Send <%= amount %>
+                    <%= cryptocurrency %> to the following address:</p>
+            <p>
+                <%= address %>
+            </p>
+        </div>
+        <div id="status" class="status" style="font-size: 15px;"> </div>
+    </div>
+
+    <script>
+        async function sleep(ms) {
+            return new Promise(resolve => setTimeout(resolve, ms));
+        }
+
+
+        window.onload = async function () {
+            while (true) {
+                try {
+                    const response = await fetch('/check', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify({
+                            invoice_id: '<%= invoice_id %>',
+                        })
+                    });
+
+                    const data = await response.json();
+
+                    if (data.is_paid) {
+                        document.getElementById('msg').textContent = 'Success';
+                        document.getElementById('status').textContent = 'Status:' + data.status;
+                        document.getElementById('status').style.color = 'green';
+                        document.getElementById('qrCode').style.display = 'block';
+                        document.getElementById('qrCode').querySelector('img').src = data.qrCodeUrl;
+                        return;
+                    } else {
+                        document.getElementById('status').textContent = 'Status: ' + data.status;
+                    }
+                } catch (error) {
+                    document.getElementById('status').textContent = 'Error: ' + error.message;
+                    document.getElementById('status').style.color = 'red';
+                }
+                await sleep(5000)
+            }
+        };
+    </script>
+</body>
+
+</html>

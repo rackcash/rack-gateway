@@ -1,0 +1,31 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Index</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+
+<body>
+    <div class="container">
+        <h1>Create Invoice</h1>
+        <form action="/create" method="POST" id="invoiceForm">
+            <input type="text" id="amount" name="amount" class="input-field" placeholder="Enter amount" required />
+            <select id="cryptocurrency" name="cryptocurrency"
+                style="width: 100%; padding: 10px; margin-bottom: 15px; border: 1px solid #333; border-radius: 4px; background-color: #2c2c2c; color: #ffffff;"
+                required>
+                <option value="eth">Ethereum</option>
+                <option value="ton">Ton</option>
+                <option value="sol">Solana</option>
+            </select>
+            <button type="submit">Create Invoice</button>
+        </form>
+        <div id="message" class="message"></div>
+        <div id="paymentAddress" class="message"></div>
+        <img id="qrCode" class="qr-code" style="display: none;" />
+    </div>
+</body>
+
+</html>
