@@ -4,6 +4,8 @@
 > [!WARNING]
 > Not production ready yet. Use at your own risk
 
+[deployment & configuration](https://github.com/rackcash/rack-infra)
+
 
 ### Examples
  - [Simple billing](https://github.com/rackcash/rack-gateway/tree/main/examples/simple-billing)   
