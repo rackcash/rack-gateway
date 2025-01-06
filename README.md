@@ -1,9 +1,10 @@
 # rack-gateway
  self-hosted crypto payment gateway 
 
-```
-⚠️ Not production ready yet
-```
+> [!WARNING]
+> Not production ready yet. Use at your own risk
+
 
 ### Examples
-   [Simple telegram bot](https://github.com/rackpay/rack-gateway/tree/main/examples/simple-telegram-bot)    
+ - [Simple billing](https://github.com/rackcash/rack-gateway/tree/main/examples/simple-billing)   
+ - [Simple telegram bot](https://github.com/rackcash/rack-gateway/tree/main/examples/simple-telegram-bot)    
