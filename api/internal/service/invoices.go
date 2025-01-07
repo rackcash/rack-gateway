@@ -158,8 +158,8 @@ func (s *InvoicesService) RunCheck(ctx context.Context, cancel context.CancelFun
 				continue
 			}
 
-			if invoice.Status.IsCancelled() {
-				fmt.Println("CANCELLED")
+			if invoice.Status.IsCanceled() {
+				fmt.Println("CANCELED")
 				return
 			}
 
@@ -355,12 +355,12 @@ func (s *InvoicesService) Cancel(invoiceId string) domain.ResponseError {
 		return err
 	}
 
-	if invoice.Status.IsCancelled() {
-		return domain.ErrInvoiceAlreadyCancelled
+	if invoice.Status.IsCanceled() {
+		return domain.ErrInvoiceAlreadyCanceled
 	}
 
 	return s.db.Transaction(func(tx *gorm.DB) error {
-		invoice.Status = domain.STATUS_CANCELLED
+		invoice.Status = domain.STATUS_CANCELED
 
 		// update invoice table
 		err := s.repo.Update(tx, invoice)

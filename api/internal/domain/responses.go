@@ -54,7 +54,7 @@ var (
 	ErrInternalServerError ResponseError = fmt.Errorf(ErrMsgInternalServerError)
 	ErrInvoiceIdNotFound   ResponseError = fmt.Errorf("invoice id not found")
 
-	ErrInvoiceAlreadyCancelled ResponseError = fmt.Errorf("invoice already cancelled")
+	ErrInvoiceAlreadyCanceled ResponseError = fmt.Errorf("the invoice is already canceled")
 )
 
 const (
@@ -73,7 +73,7 @@ func GetStatusByErr(err ResponseError) (status int) {
 		status = http.StatusBadRequest
 	case errors.Is(err, ErrInvoiceIdNotFound):
 		status = http.StatusBadRequest
-	case errors.Is(err, ErrInvoiceAlreadyCancelled):
+	case errors.Is(err, ErrInvoiceAlreadyCanceled):
 		status = http.StatusBadRequest
 	default:
 		status = http.StatusInternalServerError

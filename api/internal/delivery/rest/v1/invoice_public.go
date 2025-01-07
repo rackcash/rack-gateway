@@ -184,7 +184,7 @@ func (h *Handler) invoiceInfo(c *gin.Context) {
 		CreatedAt:      invoice.CreatedAt.Format("2006-01-02 15:04:05"),
 	}
 
-	if time.Now().Unix() > invoice.EndTimestamp && invoice.Status.IsNotPaid() && !invoice.Status.IsCancelled() {
+	if time.Now().Unix() > invoice.EndTimestamp && invoice.Status.IsNotPaid() && !invoice.Status.IsCanceled() {
 		response.Status = "end"
 	}
 
@@ -279,7 +279,7 @@ func (h *Handler) invoiceCancel(c *gin.Context) {
 		return
 	}
 
-	c.AbortWithStatusJSON(http.StatusOK, responseInvoiceCancelled{
+	c.AbortWithStatusJSON(http.StatusOK, responseInvoiceCanceled{
 		Error: false,
 	})
 

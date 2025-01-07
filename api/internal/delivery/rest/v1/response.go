@@ -77,7 +77,7 @@ type responseMerchantCreated struct {
 	MerchantId string `json:"merchant_id"`
 }
 
-type responseInvoiceCancelled struct {
+type responseInvoiceCanceled struct {
 	Error bool `json:"error"`
 	// Message string `json:"message"`
 }

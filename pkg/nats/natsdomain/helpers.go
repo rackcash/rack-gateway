@@ -74,58 +74,6 @@ func (ns *Ns) InitBuckets(ctx context.Context) error {
 	return nil
 }
 
-func (ns *Ns) KvWatch(ctx context.Context, bucket BucketType, key string) (jetstream.KeyWatcher, error) {
-	kv, err := kvGet(ns.Js, bucket.String())
-	if err != nil {
-		return nil, err
-	}
-
-	watcher, err := kv.Watch(ctx, key)
-	if err != nil {
-		return nil, err
-	}
-	return watcher, nil
-
-}
-
-func kvGet(js jetstream.JetStream, bucket string) (jetstream.KeyValue, error) {
-	return js.KeyValue(context.Background(), bucket)
-}
-
-func (ns *Ns) KvPut(bucket BucketType, key string, value []byte) {
-	fmt.Println("SET KEY VALUE", key)
-	kv, err := kvGet(ns.Js, bucket.String())
-	if err != nil {
-		panic(err)
-	}
-
-	_, err = kv.Put(context.Background(), key, value)
-	if err != nil {
-		panic(err)
-	}
-}
-
-func (ns *Ns) KVPutStr(bucket BucketType, key string, value string) {
-	kv, err := kvGet(ns.Js, bucket.String())
-	if err != nil {
-		panic(err)
-	}
-
-	_, err = kv.PutString(context.Background(), key, value)
-	if err != nil {
-		panic(err)
-	}
-}
-
-func (ns *Ns) KVGet(bucket BucketType, key string) (jetstream.KeyValueEntry, error) {
-	kv, err := kvGet(ns.Js, bucket.String())
-	if err != nil {
-		panic(err)
-	}
-
-	return kv.Get(context.Background(), key)
-}
-
 func sendrecv(nc *nats.Conn, timeout time.Duration, subj SubjType, jsonMsg []byte) (*nats.Msg, error) {
 	resp, err := nc.Request(subj.String(), jsonMsg, timeout)
 	if err != nil {
