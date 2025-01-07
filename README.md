@@ -1,6 +1,14 @@
-# rack-gateway
- Self-hosted crypto payment gateway 
+# Rack Cash
+Self-hosted crypto payment gateway 
 
+<p align="center">
+<img alt="GitHub code size in bytes" src="https://img.shields.io/github/languages/code-size/rackcash/rack-gateway">
+<img alt="GitHub code size in bytes" src="https://tokei.rs/b1/github/rackcash/rack-gateway?category=code">
+<img alt="GitHub code size in bytes" src="https://tokei.rs/b1/github/rackcash/rack-gateway?category=files">
+</p>
+ 
+
+  
 > [!WARNING]
 > Not production ready yet. Use at your own risk
 
