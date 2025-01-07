@@ -15,6 +15,7 @@ require (
 	github.com/joho/godotenv v1.5.1
 	github.com/kelseyhightower/envconfig v1.4.0
 	github.com/nats-io/nats.go v1.36.0
+	github.com/rs/cors v1.7.0
 	github.com/shopspring/decimal v1.4.0
 	github.com/xssnick/tonutils-go v1.9.8
 	github.com/yeqown/go-qrcode/v2 v2.2.4

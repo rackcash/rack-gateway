@@ -121,7 +121,8 @@ func (h *Handler) invoiceCreate(c *gin.Context) {
 }
 
 // POST /invoice/info
-func (h *Handler) info(c *gin.Context) {
+func (h *Handler) invoiceInfo(c *gin.Context) {
+	// TODO: validation
 	var data struct {
 		InvoiceId string `json:"invoice_id"`
 		ApiKey    string `json:"api_key"`
@@ -183,7 +184,7 @@ func (h *Handler) info(c *gin.Context) {
 		CreatedAt:      invoice.CreatedAt.Format("2006-01-02 15:04:05"),
 	}
 
-	if time.Now().Unix() > invoice.EndTimestamp && invoice.Status.IsNotPaid() {
+	if time.Now().Unix() > invoice.EndTimestamp && invoice.Status.IsNotPaid() && !invoice.Status.IsCancelled() {
 		response.Status = "end"
 	}
 
@@ -228,8 +229,66 @@ func (h *Handler) qrCode(c *gin.Context) {
 	c.Data(http.StatusOK, "image/png", []byte(qrCode))
 }
 
+func (h *Handler) invoiceCancel(c *gin.Context) {
+	var data struct {
+		InvoiceId string `json:"invoice_id"`
+		ApiKey    string `json:"api_key"`
+	}
+
+	var errid = logger.GenErrorId()
+
+	if err := c.ShouldBindJSON(&data); err != nil {
+		responseErr(c, http.StatusBadRequest, domain.ErrMsgBadRequest, "")
+		fmt.Println("unmarshal error: " + err.Error())
+		return
+	}
+
+	if data.InvoiceId == "" {
+		responseErr(c, http.StatusBadRequest, fmt.Sprintf(domain.ErrMsgParamsBadRequest, domain.ErrParamEmptyInvoiceId), "")
+		return
+	}
+
+	if data.ApiKey == "" {
+		responseErr(c, http.StatusBadRequest, domain.ErrMsgApiKeyInvalid, "")
+		return
+	}
+
+	exists, err := h.services.Merchants.ApiKeyExists(h.db, data.ApiKey)
+	if err != nil {
+		responseErr(c, http.StatusInternalServerError, domain.ErrMsgInternalServerError, errid)
+		h.log.TemplInvoiceErr("api key exists error: "+err.Error(), errid, data.InvoiceId, decimal.Zero, logger.NA, c.Request.RequestURI, logger.NA, c.ClientIP())
+		return
+	}
+
+	if !exists {
+		responseErr(c, http.StatusBadRequest, domain.ErrMsgApiKeyNotFound, "")
+		return
+	}
+
+	if err = h.services.Invoices.Cancel(data.InvoiceId); err != nil {
+		var _errid = ""
+		var errmsg = err.Error()
+
+		code := domain.GetStatusByErr(err)
+		if code == http.StatusInternalServerError {
+			_errid = errid
+			errmsg = domain.ErrMsgInternalServerError
+			h.log.TemplInvoiceErr("invoice cancel error: "+err.Error(), errid, data.InvoiceId, decimal.Zero, logger.NA, c.Request.RequestURI, logger.NA, c.ClientIP())
+		}
+		responseErr(c, code, errmsg, _errid)
+		return
+	}
+
+	c.AbortWithStatusJSON(http.StatusOK, responseInvoiceCancelled{
+		Error: false,
+	})
+
+}
+
 func (h *Handler) initPubInvoiceRoutes(g *gin.RouterGroup) {
 	g.POST("/invoice/create", h.invoiceCreate)
-	g.POST("/invoice/info", h.info)
+	g.POST("/invoice/info", h.invoiceInfo)
+	g.POST("/invoice/cancel", h.invoiceCancel)
+
 	g.GET("/invoice/qr-code/:invoice_id", h.qrCode)
 }

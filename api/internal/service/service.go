@@ -34,6 +34,7 @@ type Invoices interface {
 	// Tries to find from cache, if not found, searches the database
 	FindGlobal(tx *gorm.DB, invoiceId string) (*domain.Invoices, error)
 
+	Cancel(invoiceId string) domain.ResponseError
 	// for autostart only
 	RunFindEnd()
 	RunAutostartCheck()
@@ -119,9 +120,10 @@ func HewServices(ns *natsdomain.Ns, db *gorm.DB, l logger.Logger, config *config
 
 	webhookSender := NewWebhookSenderService(nil, l)
 
-	invoiceService := NewInvoicesService(db, repository.InitInvoicesRepo(), walletsRepo, balancesRepo, lockerService, n, l, cache.InitStorage(), config)
-
 	eventsRepo := repository.InitEventsRepo()
+
+	invoiceService := NewInvoicesService(db, repository.InitInvoicesRepo(), walletsRepo, balancesRepo, eventsRepo, lockerService, n, l, cache.InitStorage(), config)
+
 	GetWithdrawalService := NewGetWithdrawalService(db, n, l, eventsRepo, walletsRepo, balancesRepo, invoiceService, webhookSender, config)
 
 	withdrawalsRepo := repository.InitWithdrawalsRepo()

@@ -77,6 +77,11 @@ type responseMerchantCreated struct {
 	MerchantId string `json:"merchant_id"`
 }
 
+type responseInvoiceCancelled struct {
+	Error bool `json:"error"`
+	// Message string `json:"message"`
+}
+
 func responseErr(c *gin.Context, statusCode int, msg, errorID string) {
 	// var errorId string
 

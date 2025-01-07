@@ -28,6 +28,7 @@ type InvoicesService struct {
 	repo     repository.Invoices
 	wallets  repository.Wallets
 	balances repository.Balances
+	events   repository.Events
 	locker   Locker
 	n        *nats.NatsInfra
 	db       *gorm.DB
@@ -36,8 +37,8 @@ type InvoicesService struct {
 	config   *config.Config
 }
 
-func NewInvoicesService(db *gorm.DB, repo repository.Invoices, wallets repository.Wallets, balances repository.Balances, locker Locker, n *nats.NatsInfra, l logger.Logger, cache *cache.Cache, config *config.Config) *InvoicesService {
-	return &InvoicesService{repo: repo, wallets: wallets, balances: balances, n: n, db: db, l: l, cache: cache, locker: locker, config: config}
+func NewInvoicesService(db *gorm.DB, repo repository.Invoices, wallets repository.Wallets, balances repository.Balances, events repository.Events, locker Locker, n *nats.NatsInfra, l logger.Logger, cache *cache.Cache, config *config.Config) *InvoicesService {
+	return &InvoicesService{repo: repo, wallets: wallets, balances: balances, n: n, db: db, l: l, cache: cache, locker: locker, config: config, events: events}
 }
 
 func (s *InvoicesService) Create(tx *gorm.DB, invoice *domain.Invoices) error {
@@ -155,6 +156,11 @@ func (s *InvoicesService) RunCheck(ctx context.Context, cancel context.CancelFun
 				s.l.TemplInvoiceErr("invoice is nil", errid, logger.NA, decimal.Zero, logger.NA, logger.NA, logger.NA, logger.NA)
 				time.Sleep(reconnectDelay)
 				continue
+			}
+
+			if invoice.Status.IsCancelled() {
+				fmt.Println("CANCELLED")
+				return
 			}
 
 			if invoice.Status.IsPaid() || invoice.IsInProcessing() {
@@ -337,6 +343,36 @@ func (s *InvoicesService) RunCheck(ctx context.Context, cancel context.CancelFun
 
 		}
 	}
+
+}
+
+func (s *InvoicesService) Cancel(invoiceId string) domain.ResponseError {
+	invoice, err := s.repo.FindByID(s.db, invoiceId)
+	if err != nil {
+		if postgres.IsNotFound(err) {
+			return domain.ErrInvoiceIdNotFound
+		}
+		return err
+	}
+
+	if invoice.Status.IsCancelled() {
+		return domain.ErrInvoiceAlreadyCancelled
+	}
+
+	return s.db.Transaction(func(tx *gorm.DB) error {
+		invoice.Status = domain.STATUS_CANCELLED
+
+		// update invoice table
+		err := s.repo.Update(tx, invoice)
+		if err != nil {
+			s.l.TemplInvoiceErr("update invoice error: "+err.Error(), "", invoiceId, invoice.Amount, invoice.Cryptocurrency, logger.NA, invoice.MerchantID, logger.NA)
+			return err
+		}
+
+		//  update cache
+		s.cache.Set(invoice.InvoiceID, invoice, time.Minute*5)
+		return nil
+	})
 
 }
 

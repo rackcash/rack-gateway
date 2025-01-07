@@ -46,18 +46,22 @@ const (
 	ErrMsgInitBalancesError     = "can't init balances"
 )
 
+type ResponseError error
+
 var (
-	ErrInvalidInvoiceId    = fmt.Errorf("invalid invoice id")
-	Err                    = fmt.Errorf("invalid invoice id")
-	ErrInternalServerError = fmt.Errorf(ErrMsgInternalServerError)
-	ErrInvoiceIdNotFound   = fmt.Errorf("invoice id not found")
+	ErrInvalidInvoiceId    ResponseError = fmt.Errorf("invalid invoice id")
+	Err                    ResponseError = fmt.Errorf("invalid invoice id")
+	ErrInternalServerError ResponseError = fmt.Errorf(ErrMsgInternalServerError)
+	ErrInvoiceIdNotFound   ResponseError = fmt.Errorf("invoice id not found")
+
+	ErrInvoiceAlreadyCancelled ResponseError = fmt.Errorf("invoice already cancelled")
 )
 
 const (
 	ErrParamEmptyInvoiceId = "invoice id is empty"
 )
 
-func GetStatusByErr(err error) (status int) {
+func GetStatusByErr(err ResponseError) (status int) {
 	if err == nil {
 		return 200
 	}
@@ -68,6 +72,8 @@ func GetStatusByErr(err error) (status int) {
 	case errors.Is(err, ErrInvalidInvoiceId):
 		status = http.StatusBadRequest
 	case errors.Is(err, ErrInvoiceIdNotFound):
+		status = http.StatusBadRequest
+	case errors.Is(err, ErrInvoiceAlreadyCancelled):
 		status = http.StatusBadRequest
 	default:
 		status = http.StatusInternalServerError

@@ -28,9 +28,10 @@ const (
 	STATUS_END
 	STATUS_PAID_LESS
 	STATUS_IN_PROCESSING
+	STATUS_CANCELLED
 )
 
-var Statuses = [...]string{"not_paid", "paid", "paid_over", "end", "paid_less", "processing"}
+var Statuses = [...]string{"not_paid", "paid", "paid_over", "end", "paid_less", "processing", "cancelled"}
 
 // methods
 
@@ -48,6 +49,9 @@ func (s Status) ToString() string {
 	return Statuses[s]
 }
 
+func (s Status) IsCancelled() bool {
+	return s == STATUS_CANCELLED
+}
 func (s Status) IsPaid() bool {
 	return s == STATUS_PAID || s == STATUS_PAID_OVER
 }

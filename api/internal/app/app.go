@@ -12,6 +12,7 @@ import (
 	"syscall"
 
 	"github.com/gin-gonic/gin"
+	cors "github.com/rs/cors/wrapper/gin"
 	"gorm.io/gorm"
 )
 
@@ -33,6 +34,8 @@ func (app *App) Start() {
 	gin.SetMode(gin.ReleaseMode)
 
 	r := gin.New()
+
+	r.Use(cors.Default())
 
 	services := service.HewServices(app.NatsInfra.Ns, app.Db, app.Log, app.Config)
 
