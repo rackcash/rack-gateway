@@ -9,6 +9,14 @@
 [Deployment & configuration](https://github.com/rackcash/rack-infra)
 
 
+### Supported cryptocurrencies
+| Cryptocurrency         | Status        |
+| ----------- | -------            |
+| `TON`    | &#9745; |
+| `SOLANA`     |   &#9745;|
+| `ETHEREUM`      | &#9745;|
+
+
 ### Examples
  - [Simple billing](https://github.com/rackcash/rack-gateway/tree/main/examples/simple-billing)   
  - [Simple telegram bot](https://github.com/rackcash/rack-gateway/tree/main/examples/simple-telegram-bot)    
