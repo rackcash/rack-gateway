@@ -1,12 +1,12 @@
 # rack-gateway
- self-hosted crypto payment gateway 
+ Self-hosted crypto payment gateway 
 
 > [!WARNING]
 > Not production ready yet. Use at your own risk
 
-[api reference](https://github.com/rackcash/http-api)
+[Api reference](https://github.com/rackcash/http-api)
 
-[deployment & configuration](https://github.com/rackcash/rack-infra)
+[Deployment & configuration](https://github.com/rackcash/rack-infra)
 
 
 ### Examples
