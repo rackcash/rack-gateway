@@ -2,9 +2,9 @@
 Self-hosted crypto payment gateway 
 
 <p align="center">
-<img alt="GitHub code size in bytes" src="https://img.shields.io/github/languages/code-size/rackcash/rack-gateway">
-<img alt="GitHub code size in bytes" src="https://tokei.rs/b1/github/rackcash/rack-gateway?category=code">
-<img alt="GitHub code size in bytes" src="https://tokei.rs/b1/github/rackcash/rack-gateway?category=files">
+<img alt="" src="https://img.shields.io/github/languages/code-size/rackcash/rack-gateway">
+<img alt="" src="https://tokei.rs/b1/github/rackcash/rack-gateway">
+<img alt="" src="https://tokei.rs/b1/github/rackcash/rack-gateway?category=files">
 </p>
  
 
